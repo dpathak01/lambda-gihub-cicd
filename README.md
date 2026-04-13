@@ -34,10 +34,12 @@ For GitHub Actions deploy, configure these repository secrets:
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_REGION`
+- `AWS_S3_BUCKET` — S3 bucket for SAM deployment artifacts.
+- `AWS_SAM_STACK_NAME` — CloudFormation stack name for the SAM app.
+- `TABLE_NAME` — DynamoDB table name.
 - `AWS_LAMBDA_FUNCTION_NAME` — exact Lambda function name from the AWS console.
-- `AWS_LAMBDA_ROLE_ARN` — full IAM role ARN, required when the workflow creates the function.
 
-Example `.env` values:
+Example `.env` values for local testing:
 
 ```dotenv
 TABLE_NAME=products
@@ -45,14 +47,26 @@ KEY_ATTRIBUTE=productId
 AWS_REGION=us-east-1
 AWS_PROFILE=default
 AWS_LAMBDA_FUNCTION_NAME=lambda-github-cicd
-AWS_LAMBDA_ROLE_ARN=arn:aws:iam::123456789012:role/lambda-execution-role
 ```
 
 > `AWS_LAMBDA_ROLE_ARN` must be a full ARN like `arn:aws:iam::123456789012:role/lambda-execution-role`, not just the role name.
 
-## IAM role for Lambda
+## SAM deployment and permissions
 
-If the workflow has to create the Lambda function, it needs a normal Lambda execution role, not a service-linked role.
+This project now uses AWS SAM to create the full stack in one deployment:
+- Lambda function
+- API Gateway HTTP API
+- IAM role and permissions
+
+The GitHub Actions workflow builds and deploys the SAM template directly.
+
+### Required IAM permissions for deploy user
+
+The deploy credentials must be allowed to:
+- `cloudformation:*` on the target stack
+- `iam:CreateRole`, `iam:PassRole` for the Lambda execution role created by SAM
+- `s3:PutObject`, `s3:GetObject`, `s3:ListBucket` for the deployment bucket
+- `lambda:*`, `apigateway:*`, `dynamodb:*` as needed by the stack
 
 ### Create the role with AWS CLI
 
