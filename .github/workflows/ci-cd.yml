@@ -1,3 +1,4 @@
+# ci-cd.yml
 name: CI/CD Pipeline
 
 on:
@@ -21,7 +22,7 @@ jobs:
       - run: npm test
 
   deploy:
-    name: Deploy to AWS Lambda
+    name: Deploy with SAM
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -35,30 +36,16 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+      - uses: aws-actions/setup-sam@v1
       - run: npm ci
-      - run: zip -r function.zip src package.json package-lock.json
+      - run: sam build
       - run: |
-          FUNCTION_NAME="${{ secrets.AWS_LAMBDA_FUNCTION_NAME }}"
-          ROLE_ARN="${{ secrets.AWS_LAMBDA_ROLE_ARN }}"
-          REGION="${{ secrets.AWS_REGION }}"
-
-          if aws lambda get-function --function-name "$FUNCTION_NAME" --region "$REGION" >/dev/null 2>&1; then
-            echo "Function exists, updating code..."
-            aws lambda update-function-code \
-              --function-name "$FUNCTION_NAME" \
-              --zip-file fileb://function.zip
-          else
-            if [ -n "$ROLE_ARN" ]; then
-              echo "Function not found, creating new Lambda function..."
-              aws lambda create-function \
-                --function-name "$FUNCTION_NAME" \
-                --runtime nodejs20.x \
-                --role "$ROLE_ARN" \
-                --handler src/index.handler \
-                --zip-file fileb://function.zip
-            else
-              echo "Function not found and AWS_LAMBDA_ROLE_ARN is not set."
-              echo "Set AWS_LAMBDA_ROLE_ARN to create the Lambda automatically, or create the function manually first."
-              exit 1
-            fi
-          fi
+          sam deploy \
+            --stack-name "${{ secrets.AWS_SAM_STACK_NAME }}" \
+            --template-file .aws-sam/build/template.yaml \
+            --s3-bucket "${{ secrets.AWS_S3_BUCKET }}" \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides TableName="${{ secrets.TABLE_NAME }}" LambdaFunctionName="${{ secrets.AWS_LAMBDA_FUNCTION_NAME }}" \
+            --region "${{ secrets.AWS_REGION }}" \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset

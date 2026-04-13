@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS SAM template for Lambda + API Gateway + DynamoDB access
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: nodejs20.x
+    Handler: src/index.handler
+    Environment:
+      Variables:
+        KEY_ATTRIBUTE: productId
+
+Parameters:
+  TableName:
+    Type: String
+    Description: DynamoDB table name
+  LambdaFunctionName:
+    Type: String
+    Default: lambda-github-cicd
+    Description: Lambda function name
+
+Resources:
+  ProductsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      CodeUri: .
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:Query
+                - dynamodb:Scan
+              Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Events:
+        ProductsApi:
+          Type: HttpApi
+          Properties:
+            Path: /products/{productId}
+            Method: GET
+            PayloadFormatVersion: '2.0'
+
+Outputs:
+  ApiUrl:
+    Description: HTTP API endpoint
+    Value: !Sub https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com
