@@ -34,7 +34,17 @@ For GitHub Actions deploy, configure these repository secrets:
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_REGION`
-- `AWS_LAMBDA_FUNCTION_NAME`
+- `AWS_LAMBDA_FUNCTION_NAME` — exact Lambda function name from the AWS console.
+
+Example `.env` values:
+
+```dotenv
+TABLE_NAME=products
+KEY_ATTRIBUTE=productId
+AWS_REGION=us-east-1
+AWS_PROFILE=default
+AWS_LAMBDA_FUNCTION_NAME=lambda-github-cicd
+```
 
 ## Local testing
 
