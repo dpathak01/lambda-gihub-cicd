@@ -35,6 +35,7 @@ For GitHub Actions deploy, configure these repository secrets:
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_REGION`
 - `AWS_LAMBDA_FUNCTION_NAME` — exact Lambda function name from the AWS console.
+- `AWS_LAMBDA_ROLE_ARN` — IAM role ARN used when the function must be created.
 
 Example `.env` values:
 

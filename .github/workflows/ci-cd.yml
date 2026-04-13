@@ -38,6 +38,27 @@ jobs:
       - run: npm ci
       - run: zip -r function.zip src package.json package-lock.json
       - run: |
-          aws lambda update-function-code \
-            --function-name "${{ secrets.AWS_LAMBDA_FUNCTION_NAME }}" \
-            --zip-file fileb://function.zip
+          FUNCTION_NAME="${{ secrets.AWS_LAMBDA_FUNCTION_NAME }}"
+          ROLE_ARN="${{ secrets.AWS_LAMBDA_ROLE_ARN }}"
+          REGION="${{ secrets.AWS_REGION }}"
+
+          if aws lambda get-function --function-name "$FUNCTION_NAME" --region "$REGION" >/dev/null 2>&1; then
+            echo "Function exists, updating code..."
+            aws lambda update-function-code \
+              --function-name "$FUNCTION_NAME" \
+              --zip-file fileb://function.zip
+          else
+            if [ -n "$ROLE_ARN" ]; then
+              echo "Function not found, creating new Lambda function..."
+              aws lambda create-function \
+                --function-name "$FUNCTION_NAME" \
+                --runtime nodejs20.x \
+                --role "$ROLE_ARN" \
+                --handler src/index.handler \
+                --zip-file fileb://function.zip
+            else
+              echo "Function not found and AWS_LAMBDA_ROLE_ARN is not set."
+              echo "Set AWS_LAMBDA_ROLE_ARN to create the Lambda automatically, or create the function manually first."
+              exit 1
+            fi
+          fi
