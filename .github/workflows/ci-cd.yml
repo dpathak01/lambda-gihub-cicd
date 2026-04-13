@@ -45,12 +45,38 @@ jobs:
             STACK_NAME="lambda-github-cicd-stack"
           fi
 
+          S3_BUCKET="${{ secrets.AWS_S3_BUCKET }}"
+          TABLE_NAME="${{ secrets.TABLE_NAME }}"
+          LAMBDA_NAME="${{ secrets.AWS_LAMBDA_FUNCTION_NAME }}"
+          REGION="${{ secrets.AWS_REGION }}"
+
+          missing=0
+          if [ -z "$S3_BUCKET" ]; then
+            echo "Missing required secret: AWS_S3_BUCKET"
+            missing=1
+          fi
+          if [ -z "$TABLE_NAME" ]; then
+            echo "Missing required secret: TABLE_NAME"
+            missing=1
+          fi
+          if [ -z "$LAMBDA_NAME" ]; then
+            echo "Missing required secret: AWS_LAMBDA_FUNCTION_NAME"
+            missing=1
+          fi
+          if [ -z "$REGION" ]; then
+            echo "Missing required secret: AWS_REGION"
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
           sam deploy \
             --stack-name "$STACK_NAME" \
             --template-file .aws-sam/build/template.yaml \
-            --s3-bucket "${{ secrets.AWS_S3_BUCKET }}" \
+            --s3-bucket "$S3_BUCKET" \
             --capabilities CAPABILITY_IAM \
-            --parameter-overrides TableName="${{ secrets.TABLE_NAME }}" LambdaFunctionName="${{ secrets.AWS_LAMBDA_FUNCTION_NAME }}" \
-            --region "${{ secrets.AWS_REGION }}" \
+            --parameter-overrides "TableName=$TABLE_NAME" "LambdaFunctionName=$LAMBDA_NAME" \
+            --region "$REGION" \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset
