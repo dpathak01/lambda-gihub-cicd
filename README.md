@@ -50,6 +50,69 @@ AWS_LAMBDA_ROLE_ARN=arn:aws:iam::123456789012:role/lambda-execution-role
 
 > `AWS_LAMBDA_ROLE_ARN` must be a full ARN like `arn:aws:iam::123456789012:role/lambda-execution-role`, not just the role name.
 
+## IAM role for Lambda
+
+If the workflow has to create the Lambda function, it needs a normal Lambda execution role, not a service-linked role.
+
+### Create the role with AWS CLI
+
+Save this as `trust-policy.json`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+Then run:
+
+```bash
+aws iam create-role \
+  --role-name lambda-github-cicd-role \
+  --assume-role-policy-document file://trust-policy.json
+```
+
+Attach the Lambda execution policy:
+
+```bash
+aws iam attach-role-policy \
+  --role-name lambda-github-cicd-role \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+```
+
+If your function reads DynamoDB, attach read permissions too:
+
+```bash
+aws iam attach-role-policy \
+  --role-name lambda-github-cicd-role \
+  --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess
+```
+
+Then get the role ARN:
+
+```bash
+aws iam get-role --role-name lambda-github-cicd-role --query 'Role.Arn' --output text
+```
+
+### Important
+
+- The deploy user must have `iam:PassRole` permission on this role.
+- Do not use service-linked roles like `AWSServiceRoleForLambda` for Lambda creation.
+- Use the full ARN in `AWS_LAMBDA_ROLE_ARN`, for example:
+
+```text
+arn:aws:iam::705387578016:role/lambda-github-cicd-role
+```
+
 ## Local testing
 
 Run the unit tests locally:
