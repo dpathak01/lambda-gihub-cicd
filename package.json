@@ -1,0 +1,16 @@
+{
+  "name": "lambda-github-cicd",
+  "version": "0.1.0",
+  "description": "AWS Lambda function with DynamoDB integration and GitHub Actions CI/CD",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.399.0",
+    "@aws-sdk/util-dynamodb": "^3.399.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
