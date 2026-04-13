@@ -35,7 +35,7 @@ For GitHub Actions deploy, configure these repository secrets:
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_REGION`
 - `AWS_S3_BUCKET` — S3 bucket for SAM deployment artifacts.
-- `AWS_SAM_STACK_NAME` — CloudFormation stack name for the SAM app.
+- `AWS_SAM_STACK_NAME` — CloudFormation stack name for the SAM app (optional; defaults to `lambda-github-cicd-stack`).
 - `TABLE_NAME` — DynamoDB table name.
 - `AWS_LAMBDA_FUNCTION_NAME` — exact Lambda function name from the AWS console.
 
